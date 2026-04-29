@@ -344,12 +344,57 @@ export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategori
           >
             <div className="bg-white/80 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-100 grid grid-cols-2 gap-4">
               <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100">
-                <p className="font-nunito font-bold text-emerald-800 text-xs uppercase tracking-wider mb-1">Total Expenses</p>
+                <p className="font-nunito font-bold text-emerald-800 text-xs uppercase tracking-wider mb-1">Total Trip Cost</p>
                 <h2 className="font-nunito font-black text-3xl text-emerald-900">₹{totalExpenses.toLocaleString()}</h2>
               </div>
               <div className="bg-sky-50 rounded-2xl p-4 border border-sky-100">
-                <p className="font-nunito font-bold text-sky-800 text-xs uppercase tracking-wider mb-1">Per Person</p>
+                <p className="font-nunito font-bold text-sky-800 text-xs uppercase tracking-wider mb-1">Per Person Share</p>
                 <h2 className="font-nunito font-black text-3xl text-sky-900">₹{Math.round(perPerson).toLocaleString()}</h2>
+              </div>
+            </div>
+
+            {/* Member Balances */}
+            <div className="bg-white/80 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-100">
+              <h3 className="font-nunito font-black text-xl text-slate-800 mb-4 flex items-center gap-2">
+                <Users size={20} className="text-indigo-500" /> Member Balances
+              </h3>
+              <div className="space-y-3">
+                {trip.members.map(member => {
+                  const paidByMember = expenses.filter(e => e.paidBy === member).reduce((sum, e) => sum + e.amount, 0);
+                  const balance = paidByMember - perPerson;
+                  const isCredit = balance > 0;
+                  const isSettled = Math.abs(balance) < 1;
+
+                  return (
+                    <div key={member} className="flex items-center justify-between p-3 bg-slate-50/50 rounded-2xl border border-slate-100/50">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-xs font-bold shadow-sm border border-slate-100">
+                          {member[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-nunito font-bold text-slate-800 text-sm">{member} {member === myName && "(You)"}</p>
+                          <p className="font-caveat text-slate-400 text-sm leading-none">Paid: ₹{paidByMember}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        {isSettled ? (
+                          <span className="text-xs font-nunito font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded-lg">Settled</span>
+                        ) : isCredit ? (
+                          <div className="flex flex-col items-end">
+                            <span className="text-[10px] font-nunito font-black text-emerald-600 uppercase tracking-widest bg-emerald-100 px-2 py-0.5 rounded-lg mb-1">Credit</span>
+                            <p className="font-nunito font-black text-emerald-600 text-sm">₹{Math.round(balance)}</p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-end">
+                            <span className="text-[10px] font-nunito font-black text-rose-600 uppercase tracking-widest bg-rose-100 px-2 py-0.5 rounded-lg mb-1">Pending</span>
+                            <p className="font-nunito font-black text-rose-600 text-sm">₹{Math.round(Math.abs(balance))}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
