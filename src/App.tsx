@@ -8,36 +8,38 @@ import { storage } from "./services/storage";
 import { TripData } from "./types";
 import { Loader } from "lucide-react";
 
-// Components
-import NameScreen from "./components/NameScreen";
+import AuthScreen from "./components/AuthScreen";
 import LobbyScreen from "./components/LobbyScreen";
 import PlannerScreen from "./components/PlannerScreen";
 import ChecklistScreen from "./components/ChecklistScreen";
 
-const MY_NAME_KEY = "ftv3:myname";
+
+const USER_SESSION_KEY = "ftv3:user";
 
 export default function App() {
-  const [screen, setScreen] = useState<"boot" | "name" | "lobby" | "planner" | "checklist">("boot");
-  const [myName, setMyName] = useState<string | null>(null);
+  const [screen, setScreen] = useState<"boot" | "auth" | "lobby" | "planner" | "checklist">("boot");
+  const [currentUser, setCurrentUser] = useState<{ id: string, email: string, name: string } | null>(null);
   const [trips, setTrips] = useState<any[]>([]);
   const [openTrip, setOpenTrip] = useState<TripData | null>(null);
   const [trans, setTrans] = useState(false);
 
+  const myName = currentUser?.name || "";
+
   useEffect(() => {
-    const name = localStorage.getItem(MY_NAME_KEY);
-    if (name) {
-      setMyName(name);
+    const session = localStorage.getItem(USER_SESSION_KEY);
+    if (session) {
+      setCurrentUser(JSON.parse(session));
       setScreen("lobby");
     } else {
-      setScreen("name");
+      setScreen("auth");
     }
   }, []);
 
   useEffect(() => {
-    if (screen === "lobby") {
-      setTrips(storage.getTrips());
+    if (screen === "lobby" && currentUser) {
+      storage.getTrips().then(setTrips);
     }
-  }, [screen]);
+  }, [screen, currentUser]);
 
   function go(scr: typeof screen, delay = 350) {
     setTrans(true);
@@ -47,10 +49,32 @@ export default function App() {
     }, delay);
   }
 
-  async function handleSetName(name: string) {
-    localStorage.setItem(MY_NAME_KEY, name);
-    setMyName(name);
+  function handleAuthSuccess(user: { id: string, email: string, name: string }) {
+    localStorage.setItem(USER_SESSION_KEY, JSON.stringify(user));
+    setCurrentUser(user);
     go("lobby", 200);
+  }
+
+  function handleLogout() {
+    localStorage.removeItem(USER_SESSION_KEY);
+    setCurrentUser(null);
+    setScreen("auth");
+  }
+
+  async function handleJoinByCode(code: string) {
+    const trip = await storage.getTripByCode(code);
+    if (!trip) return false;
+    
+    // Add user to members if not already there
+    if (!trip.members.includes(myName)) {
+      const updatedMembers = [...trip.members, myName];
+      await storage.updateTrip(trip.id, {
+        members: updatedMembers
+      });
+      const updatedTrips = await storage.getTrips();
+      setTrips(updatedTrips);
+    }
+    return true;
   }
 
   async function handleCreateTrip(plan: any) {
@@ -65,19 +89,20 @@ export default function App() {
     const tripData = {
       plan,
       categories: initialCategories,
-      createdBy: myName!,
-      members: [myName!],
+      createdBy: myName,
+      members: [myName],
     };
 
     await storage.createTrip(id, tripData);
-    setTrips(storage.getTrips());
-    setOpenTrip({ id, ...tripData, createdAt: new Date() } as TripData);
+    const updatedTrips = await storage.getTrips();
+    setTrips(updatedTrips);
+    setOpenTrip({ id, ...tripData, createdAt: new Date() } as any);
     go("checklist");
   }
 
   async function handleJoinTrip(trip: any) {
     if (!trip.members.includes(myName)) {
-      const updatedMembers = [...trip.members, myName!];
+      const updatedMembers = [...trip.members, myName];
       await storage.updateTrip(trip.id, {
         members: updatedMembers
       });
@@ -93,7 +118,7 @@ export default function App() {
 
     const newRequest = {
       id: Math.random().toString(36).slice(2, 9),
-      userName: myName!,
+      userName: myName,
       status: 'pending',
       requestedAt: new Date().toISOString()
     };
@@ -102,7 +127,8 @@ export default function App() {
     await storage.updateTrip(tripId, {
       joinRequests: [...joinRequests, newRequest]
     });
-    setTrips(storage.getTrips());
+    const updatedTrips = await storage.getTrips();
+    setTrips(updatedTrips);
   }
 
   async function handleApproveMember(requestId: string) {
@@ -122,7 +148,8 @@ export default function App() {
     });
     
     setOpenTrip({ ...openTrip, joinRequests: updatedRequests as any, members: updatedMembers });
-    setTrips(storage.getTrips());
+    const updatedTrips = await storage.getTrips();
+    setTrips(updatedTrips);
   }
 
   async function handleDeclineMember(requestId: string) {
@@ -136,7 +163,8 @@ export default function App() {
     });
     
     setOpenTrip({ ...openTrip, joinRequests: updatedRequests as any });
-    setTrips(storage.getTrips());
+    const updatedTrips = await storage.getTrips();
+    setTrips(updatedTrips);
   }
 
   async function handleDeleteTrip(id: string) {
@@ -147,7 +175,8 @@ export default function App() {
     }
     if (window.confirm("Delete this trip?")) {
       await storage.deleteTrip(id);
-      setTrips(storage.getTrips());
+      const updatedTrips = await storage.getTrips();
+      setTrips(updatedTrips);
     }
   }
 
@@ -167,17 +196,18 @@ export default function App() {
         </div>
       )}
 
-      {screen === "name" && <NameScreen onDone={handleSetName} />}
+      {screen === "auth" && <AuthScreen onAuthSuccess={handleAuthSuccess} />}
 
-      {screen === "lobby" && (
+      {screen === "lobby" && currentUser && (
         <LobbyScreen 
-          myName={myName!} 
+          myName={myName} 
           trips={trips} 
           onJoin={handleJoinTrip} 
           onRequestJoin={handleRequestJoin}
+          onJoinByCode={handleJoinByCode}
           onNew={() => go("planner")} 
           onDelete={handleDeleteTrip}
-          onLogout={() => { localStorage.removeItem(MY_NAME_KEY); setMyName(null); setScreen("name"); }}
+          onLogout={handleLogout}
         />
       )}
 
@@ -198,6 +228,10 @@ export default function App() {
           onUpdateExpenses={(expenses) => {
             storage.updateTrip(openTrip.id, { expenses });
             setOpenTrip({ ...openTrip, expenses });
+          }}
+          onUpdateTransfers={(transfers) => {
+            storage.updateTrip(openTrip.id, { transfers });
+            setOpenTrip({ ...openTrip, transfers });
           }}
           onApproveMember={handleApproveMember}
           onDeclineMember={handleDeclineMember}

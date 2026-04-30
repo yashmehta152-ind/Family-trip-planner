@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, MapPin, Users, Wifi, Loader, CheckCircle2, Circle, Plus, Trash2, Sparkles, FileText, Zap, Heart, Shirt, ShoppingCart, Utensils, BookOpen, Music, Gamepad2, Baby, Tag, Luggage, Star, X, Copy, Check, Receipt, UserCheck, ShieldCheck, UserX, Wallet } from "lucide-react";
-import { TripData, TripCategory, Expense } from "../types";
+import { ChevronLeft, MapPin, Users, Wifi, Loader, CheckCircle2, Circle, Plus, Trash2, Sparkles, FileText, Zap, Heart, Shirt, ShoppingCart, Utensils, BookOpen, Music, Gamepad2, Baby, Tag, Luggage, Star, X, Copy, Check, Receipt, UserCheck, ShieldCheck, UserX, Wallet, ArrowRightLeft, ArrowRight } from "lucide-react";
+import { TripData, TripCategory, Expense, Transfer } from "../types";
 import { getPackingSuggestions } from "../services/geminiService";
 
 interface Props {
@@ -10,13 +10,14 @@ interface Props {
   onBack: () => void;
   onUpdateCategories: (categories: TripCategory[]) => void;
   onUpdateExpenses: (expenses: Expense[]) => void;
+  onUpdateTransfers: (transfers: Transfer[]) => void;
   onApproveMember: (requestId: string) => void;
   onDeclineMember: (requestId: string) => void;
 }
 
 const ICON_MAP: Record<string, any> = { FileText, Zap, Heart, Shirt, ShoppingCart, Utensils, BookOpen, Music, Gamepad2, Baby, Tag, Luggage, Star };
 
-export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategories, onUpdateExpenses, onApproveMember, onDeclineMember }: Props) {
+export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategories, onUpdateExpenses, onUpdateTransfers, onApproveMember, onDeclineMember }: Props) {
   const [tab, setTab] = useState<"checklist" | "expenses" | "members">("checklist");
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [newItemText, setNewItemText] = useState("");
@@ -28,6 +29,11 @@ export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategori
   const [expAmt, setExpAmt] = useState("");
   const [showAddExp, setShowAddExp] = useState(false);
 
+  // Transfer state
+  const [transAmt, setTransAmt] = useState("");
+  const [transTo, setTransTo] = useState("");
+  const [showAddTrans, setShowAddTrans] = useState(false);
+
   const isCreator = trip.createdBy === myName;
 
   const copyJSON = () => {
@@ -38,6 +44,7 @@ export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategori
 
   const categories = trip.categories || [];
   const expenses = trip.expenses || [];
+  const transfers = trip.transfers || [];
   const pendingRequests = (trip.joinRequests || []).filter(r => r.status === 'pending');
 
   const totalItems = categories.reduce((sum, c) => sum + c.items.length, 0);
@@ -65,6 +72,26 @@ export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategori
 
   const deleteExpense = (id: string) => {
     onUpdateExpenses(expenses.filter(e => e.id !== id));
+  };
+
+  const addTransfer = () => {
+    const amt = parseFloat(transAmt);
+    if (!transTo || isNaN(amt)) return;
+    const newTrans: Transfer = {
+      id: Math.random().toString(36).slice(2, 9),
+      from: myName,
+      to: transTo,
+      amount: amt,
+      date: new Date().toISOString()
+    };
+    onUpdateTransfers([...transfers, newTrans]);
+    setTransAmt("");
+    setTransTo("");
+    setShowAddTrans(false);
+  };
+
+  const deleteTransfer = (id: string) => {
+    onUpdateTransfers(transfers.filter(t => t.id !== id));
   };
 
   const toggleItem = (catId: string, itemId: string) => {
@@ -360,8 +387,14 @@ export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategori
               </h3>
               <div className="space-y-3">
                 {trip.members.map(member => {
-                  const paidByMember = expenses.filter(e => e.paidBy === member).reduce((sum, e) => sum + e.amount, 0);
-                  const balance = paidByMember - perPerson;
+                  const paidInExpenses = expenses.filter(e => e.paidBy === member).reduce((sum, e) => sum + e.amount, 0);
+                  const sentTransfers = transfers.filter(t => t.from === member).reduce((sum, t) => sum + t.amount, 0);
+                  const receivedTransfers = transfers.filter(t => t.to === member).reduce((sum, t) => sum + t.amount, 0);
+                  
+                  // Total Outflow - Inflow from transfers
+                  const memberPaid = paidInExpenses + sentTransfers - receivedTransfers;
+                  const balance = memberPaid - perPerson;
+                  
                   const isCredit = balance > 0;
                   const isSettled = Math.abs(balance) < 1;
 
@@ -373,7 +406,10 @@ export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategori
                         </div>
                         <div>
                           <p className="font-nunito font-bold text-slate-800 text-sm">{member} {member === myName && "(You)"}</p>
-                          <p className="font-caveat text-slate-400 text-sm leading-none">Paid: ₹{paidByMember}</p>
+                          <div className="flex gap-2">
+                            <p className="font-caveat text-slate-400 text-sm leading-none">Spent: ₹{Math.round(perPerson)}</p>
+                            <p className="font-caveat text-emerald-500 text-sm leading-none font-bold">Paid: ₹{Math.round(memberPaid)}</p>
+                          </div>
                         </div>
                       </div>
                       
@@ -387,7 +423,7 @@ export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategori
                           </div>
                         ) : (
                           <div className="flex flex-col items-end">
-                            <span className="text-[10px] font-nunito font-black text-rose-600 uppercase tracking-widest bg-rose-100 px-2 py-0.5 rounded-lg mb-1">Pending</span>
+                            <span className="text-[10px] font-nunito font-black text-rose-600 uppercase tracking-widest bg-rose-100 px-2 py-0.5 rounded-lg mb-1">To Pay</span>
                             <p className="font-nunito font-black text-rose-600 text-sm">₹{Math.round(Math.abs(balance))}</p>
                           </div>
                         )}
@@ -396,16 +432,27 @@ export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategori
                   );
                 })}
               </div>
+              <p className="mt-4 font-caveat text-slate-400 text-center text-sm px-4">
+                "Paid" shows trip expenses you covered + any direct payments you made to fellow members.
+              </p>
             </div>
 
-            <div className="flex justify-between items-center px-1">
-              <h3 className="font-nunito font-black text-2xl text-slate-800">Expense Log</h3>
-              <button 
-                onClick={() => setShowAddExp(true)}
-                className="bg-emerald-500 text-white font-nunito font-bold px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-100 active:scale-95"
-              >
-                <Plus size={18} /> Add Expense
-              </button>
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 px-1">
+              <h3 className="font-nunito font-black text-2xl text-slate-800 self-start">Expenses & Payments</h3>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <button 
+                  onClick={() => { setShowAddExp(true); setShowAddTrans(false); }}
+                  className="flex-1 sm:flex-none bg-emerald-500 text-white font-nunito font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-100 active:scale-95"
+                >
+                  <Plus size={18} /> Trip Expense
+                </button>
+                <button 
+                  onClick={() => { setShowAddTrans(true); setShowAddExp(false); }}
+                  className="flex-1 sm:flex-none bg-indigo-500 text-white font-nunito font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-100 active:scale-95"
+                >
+                  <UserCheck size={18} /> I Paid Member
+                </button>
+              </div>
             </div>
 
             {showAddExp && (
@@ -414,12 +461,16 @@ export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategori
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white p-6 rounded-3xl border-2 border-emerald-200 shadow-xl space-y-4"
               >
+                <div className="flex items-center gap-2 text-emerald-600 mb-2">
+                  <Wallet size={20} />
+                  <h4 className="font-nunito font-black">Record Trip Expense</h4>
+                </div>
                 <div>
-                  <label className="block font-nunito font-bold text-slate-700 text-sm mb-1">Description</label>
+                  <label className="block font-nunito font-bold text-slate-700 text-sm mb-1">What was it for?</label>
                   <input
                     type="text"
-                    className="w-full border-2 border-slate-100 rounded-xl px-4 py-2 font-caveat text-xl"
-                    placeholder="e.g. Lunch at beach, Fuel..."
+                    className="w-full border-2 border-slate-100 rounded-xl px-4 py-2 font-caveat text-xl focus:outline-hidden focus:border-emerald-300"
+                    placeholder="e.g. Lunch, Fuel, Tickets..."
                     value={expDesc}
                     onChange={(e) => setExpDesc(e.target.value)}
                   />
@@ -428,7 +479,7 @@ export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategori
                   <label className="block font-nunito font-bold text-slate-700 text-sm mb-1">Amount (₹)</label>
                   <input
                     type="number"
-                    className="w-full border-2 border-slate-100 rounded-xl px-4 py-2 font-nunito font-bold text-xl"
+                    className="w-full border-2 border-slate-100 rounded-xl px-4 py-2 font-nunito font-bold text-xl focus:outline-hidden focus:border-emerald-300"
                     placeholder="0"
                     value={expAmt}
                     onChange={(e) => setExpAmt(e.target.value)}
@@ -445,36 +496,104 @@ export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategori
               </motion.div>
             )}
 
-            <div className="space-y-4">
-              {expenses.length > 0 ? (
-                expenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(e => (
-                  <div key={e.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between group">
+            {showAddTrans && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white p-6 rounded-3xl border-2 border-indigo-200 shadow-xl space-y-4"
+              >
+                <div className="flex items-center gap-2 text-indigo-600 mb-2">
+                  <UserCheck size={20} />
+                  <h4 className="font-nunito font-black">I Paid a Member</h4>
+                </div>
+                <div>
+                  <label className="block font-nunito font-bold text-slate-700 text-sm mb-1">Who did you pay?</label>
+                  <div className="flex flex-wrap gap-2">
+                    {trip.members.filter(m => m !== myName).map(member => (
+                      <button
+                        key={member}
+                        onClick={() => setTransTo(member)}
+                        className={`px-4 py-2 rounded-xl font-nunito font-bold text-sm transition-all ${
+                          transTo === member 
+                          ? "bg-indigo-500 text-white shadow-md ring-2 ring-indigo-200" 
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        {member}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block font-nunito font-bold text-slate-700 text-sm mb-1">How much?</label>
+                  <input
+                    type="number"
+                    className="w-full border-2 border-slate-100 rounded-xl px-4 py-2 font-nunito font-bold text-xl focus:outline-hidden focus:border-indigo-300"
+                    placeholder="0"
+                    value={transAmt}
+                    onChange={(e) => setTransAmt(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={addTransfer} className="flex-1 bg-indigo-500 text-white font-nunito font-bold py-3 rounded-xl shadow-lg shadow-indigo-100 outline-hidden">
+                    Record Payment
+                  </button>
+                  <button onClick={() => setShowAddTrans(false)} className="px-6 bg-slate-100 text-slate-500 font-nunito font-bold py-3 rounded-xl outline-hidden">
+                    Cancel
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center justify-between px-1">
+                <p className="font-nunito font-black text-xs text-slate-400 uppercase tracking-widest">Recent Activity</p>
+              </div>
+
+              {[...expenses.map(e => ({...e, type: 'expense'})), ...transfers.map(t => ({...t, type: 'transfer'}))]
+                .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .map((item: any) => (
+                  <div key={item.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between group">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 text-xl">
-                        <Wallet size={20} />
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${
+                        item.type === 'expense' ? "bg-emerald-50 text-emerald-500" : "bg-indigo-50 text-indigo-500"
+                      }`}>
+                        {item.type === 'expense' ? <Wallet size={20} /> : <UserCheck size={20} />}
                       </div>
                       <div>
-                        <h4 className="font-nunito font-bold text-slate-800 leading-tight">{e.description}</h4>
-                        <p className="font-caveat text-slate-500 text-lg leading-none mt-1">Paid by {e.paidBy === myName ? "You" : e.paidBy}</p>
+                        {item.type === 'expense' ? (
+                          <>
+                            <h4 className="font-nunito font-bold text-slate-800 leading-tight">{item.description}</h4>
+                            <p className="font-caveat text-slate-500 text-lg leading-none mt-1">Paid by {item.paidBy === myName ? "You" : item.paidBy}</p>
+                          </>
+                        ) : (
+                          <>
+                            <h4 className="font-nunito font-bold text-slate-800 leading-tight">Direct Payment</h4>
+                            <p className="font-caveat text-slate-500 text-lg leading-none mt-1">
+                              {item.from === myName ? "You paid " : item.from + " paid "} {item.to === myName ? "You" : item.to}
+                            </p>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="font-nunito font-black text-xl text-slate-800">₹{e.amount.toLocaleString()}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{new Date(e.date).toLocaleDateString()}</p>
+                        <p className={`font-nunito font-black text-xl ${item.type === 'expense' ? "text-slate-800" : "text-indigo-600"}`}>₹{item.amount.toLocaleString()}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{new Date(item.date).toLocaleDateString()}</p>
                       </div>
                       <button 
-                        onClick={() => deleteExpense(e.id)}
+                        onClick={() => item.type === 'expense' ? deleteExpense(item.id) : deleteTransfer(item.id)}
                         className="opacity-0 group-hover:opacity-100 p-2 text-slate-200 hover:text-red-400 transition-all"
                       >
                         <Trash2 size={18} />
                       </button>
                     </div>
                   </div>
-                ))
-              ) : (
+                ))}
+              
+              {expenses.length === 0 && transfers.length === 0 && (
                 <div className="text-center py-20 bg-white/50 rounded-3xl border-2 border-dashed border-slate-200">
-                  <p className="font-caveat text-2xl text-slate-400">No expenses logged yet. Let's start tracking!</p>
+                  <p className="font-caveat text-2xl text-slate-400">No activity yet. Let's start tracking!</p>
                 </div>
               )}
             </div>
