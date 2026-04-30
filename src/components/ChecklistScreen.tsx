@@ -6,6 +6,7 @@ import { getPackingSuggestions } from "../services/geminiService";
 
 interface Props {
   myName: string;
+  myId: string;
   trip: TripData;
   onBack: () => void;
   onUpdateCategories: (categories: TripCategory[]) => void;
@@ -17,7 +18,7 @@ interface Props {
 
 const ICON_MAP: Record<string, any> = { FileText, Zap, Heart, Shirt, ShoppingCart, Utensils, BookOpen, Music, Gamepad2, Baby, Tag, Luggage, Star };
 
-export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategories, onUpdateExpenses, onUpdateTransfers, onApproveMember, onDeclineMember }: Props) {
+export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCategories, onUpdateExpenses, onUpdateTransfers, onApproveMember, onDeclineMember }: Props) {
   const [tab, setTab] = useState<"checklist" | "expenses" | "members">("checklist");
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [newItemText, setNewItemText] = useState("");
@@ -34,7 +35,7 @@ export default function ChecklistScreen({ myName, trip, onBack, onUpdateCategori
   const [transTo, setTransTo] = useState("");
   const [showAddTrans, setShowAddTrans] = useState(false);
 
-  const isCreator = trip.createdBy === myName;
+  const isCreator = trip.createdBy === myName || (trip as any).creatorId === myId;
 
   const copyJSON = () => {
     navigator.clipboard.writeText(JSON.stringify(trip, null, 2));

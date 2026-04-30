@@ -1,6 +1,13 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Mail, Lock, User, ArrowRight, Loader, Globe } from "lucide-react";
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  updateProfile 
+} from "firebase/auth";
+import { auth, db } from "../lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 
 interface Props {
   onAuthSuccess: (user: { id: string, email: string, name: string }) => void;
@@ -19,22 +26,34 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
     setLoading(true);
     setError(null);
 
-    const endpoint = mode === "login" ? "/api/login" : "/api/register";
-    const body = mode === "login" ? { email, password } : { email, password, name };
-
     try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      if (mode === "register") {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: name });
+        
+        // Create user doc in Firestore
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          name,
+          email,
+          createdAt: new Date().toISOString()
+        });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Something went wrong");
-
-      onAuthSuccess(data);
+        onAuthSuccess({
+          id: userCredential.user.uid,
+          email: userCredential.user.email || "",
+          name: name
+        });
+      } else {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        onAuthSuccess({
+          id: userCredential.user.uid,
+          email: userCredential.user.email || "",
+          name: userCredential.user.displayName || "User"
+        });
+      }
     } catch (err: any) {
-      setError(err.message);
+      console.error("Auth error:", err);
+      setError(err.message || "Authentication failed");
     } finally {
       setLoading(false);
     }

@@ -5,6 +5,8 @@ import { TripData } from "../types";
 
 interface Props {
   myName: string;
+  myId: string;
+  currentUser: any;
   trips: any[];
   onJoin: (trip: any) => void;
   onRequestJoin: (tripId: string) => void;
@@ -14,13 +16,15 @@ interface Props {
   onLogout: () => void;
 }
 
-export default function LobbyScreen({ myName, trips, onJoin, onRequestJoin, onJoinByCode, onNew, onDelete, onLogout }: Props) {
+export default function LobbyScreen({ myName, myId, currentUser, trips, onJoin, onRequestJoin, onJoinByCode, onNew, onDelete, onLogout }: Props) {
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [tripCode, setTripCode] = useState("");
   const [joining, setJoining] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
 
-  const myTrips = (trips || []).filter((t: any) => t.members.includes(myName));
+  const myTrips = (trips || []).filter((t: any) => 
+    t.members.includes(myId) || t.members.includes(currentUser?.email) || t.members.includes(myName)
+  );
 
   const handleJoinByCode = async () => {
     if (!tripCode.trim()) return;

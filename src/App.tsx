@@ -7,6 +7,8 @@ import { useState, useEffect } from "react";
 import { storage } from "./services/storage";
 import { TripData } from "./types";
 import { Loader } from "lucide-react";
+import { auth } from "./lib/firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
 import AuthScreen from "./components/AuthScreen";
 import LobbyScreen from "./components/LobbyScreen";
@@ -24,20 +26,30 @@ export default function App() {
   const [trans, setTrans] = useState(false);
 
   const myName = currentUser?.name || "";
+  const myId = currentUser?.id || "";
 
   useEffect(() => {
-    const session = localStorage.getItem(USER_SESSION_KEY);
-    if (session) {
-      setCurrentUser(JSON.parse(session));
-      setScreen("lobby");
-    } else {
-      setScreen("auth");
-    }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const userData = {
+          id: user.uid,
+          email: user.email || "",
+          name: user.displayName || "User"
+        };
+        setCurrentUser(userData);
+        setScreen("lobby");
+      } else {
+        setCurrentUser(null);
+        setScreen("auth");
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (screen === "lobby" && currentUser) {
-      storage.getTrips().then(setTrips);
+      return storage.subscribeToTrips(setTrips);
     }
   }, [screen, currentUser]);
 
@@ -50,13 +62,13 @@ export default function App() {
   }
 
   function handleAuthSuccess(user: { id: string, email: string, name: string }) {
-    localStorage.setItem(USER_SESSION_KEY, JSON.stringify(user));
+    // onAuthStateChanged will handle the screen transition
     setCurrentUser(user);
     go("lobby", 200);
   }
 
-  function handleLogout() {
-    localStorage.removeItem(USER_SESSION_KEY);
+  async function handleLogout() {
+    await signOut(auth);
     setCurrentUser(null);
     setScreen("auth");
   }
@@ -66,13 +78,13 @@ export default function App() {
     if (!trip) return false;
     
     // Add user to members if not already there
-    if (!trip.members.includes(myName)) {
-      const updatedMembers = [...trip.members, myName];
+    if (!trip.members.includes(myId) && !trip.members.includes(currentUser?.email)) {
+      const updatedMembers = [...trip.members, myId];
+      if (currentUser?.email) updatedMembers.push(currentUser.email);
+      
       await storage.updateTrip(trip.id, {
         members: updatedMembers
       });
-      const updatedTrips = await storage.getTrips();
-      setTrips(updatedTrips);
     }
     return true;
   }
@@ -89,20 +101,20 @@ export default function App() {
     const tripData = {
       plan,
       categories: initialCategories,
-      createdBy: myName,
-      members: [myName],
+      createdBy: myName, // Keep name for display
+      creatorId: myId,  // Store ID for security logic if needed
+      members: [myId, currentUser?.email].filter(Boolean),
     };
 
     await storage.createTrip(id, tripData);
-    const updatedTrips = await storage.getTrips();
-    setTrips(updatedTrips);
     setOpenTrip({ id, ...tripData, createdAt: new Date() } as any);
     go("checklist");
   }
 
   async function handleJoinTrip(trip: any) {
-    if (!trip.members.includes(myName)) {
-      const updatedMembers = [...trip.members, myName];
+    if (!trip.members.includes(myId) && !trip.members.includes(currentUser?.email)) {
+      const updatedMembers = [...trip.members, myId];
+      if (currentUser?.email) updatedMembers.push(currentUser.email);
       await storage.updateTrip(trip.id, {
         members: updatedMembers
       });
@@ -201,6 +213,8 @@ export default function App() {
       {screen === "lobby" && currentUser && (
         <LobbyScreen 
           myName={myName} 
+          myId={myId}
+          currentUser={currentUser}
           trips={trips} 
           onJoin={handleJoinTrip} 
           onRequestJoin={handleRequestJoin}
@@ -221,7 +235,8 @@ export default function App() {
 
       {screen === "checklist" && openTrip && (
         <ChecklistScreen 
-          myName={myName!} 
+          myName={myName} 
+          myId={myId}
           trip={openTrip} 
           onBack={() => go("lobby")} 
           onUpdateCategories={handleUpdateCategories}

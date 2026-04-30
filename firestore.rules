@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow write: if isOwner(userId);
+    }
+
+    match /trips/{tripId} {
+      // Allow listing trips where the user is a member
+      allow list: if isSignedIn() && (request.auth.uid in resource.data.members || request.auth.token.email in resource.data.members);
+      
+      // Allow getting a specific trip if signed in (to check code during join)
+      // Note: In production we'd be more restrictive, but for "join by code" without document ID, 
+      // we usually query. To allow query by code:
+      allow list: if isSignedIn() && request.query.limit <= 1; 
+
+      allow get: if isSignedIn(); 
+
+      allow create: if isSignedIn() && 
+        incoming().members.hasAny([request.auth.uid]) &&
+        incoming().code is string && incoming().code.size() == 6;
+
+      allow update: if isSignedIn() && (
+        // Action: Join
+        (incoming().diff(existing()).affectedKeys().hasOnly(['members', 'joinRequests']) && 
+         (request.auth.uid in incoming().members || request.auth.token.email in incoming().members)) ||
+        // Action: Edit (only if already a member)
+        (request.auth.uid in existing().members || request.auth.token.email in existing().members)
+      );
+
+      allow delete: if isSignedIn() && (request.auth.uid in existing().members || request.auth.token.email in existing().members);
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "entities": {
+    "Trip": {
+      "title": "Trip",
+      "description": "A travel trip planned by users",
+      "type": "object",
+      "properties": {
+        "plan": { "type": "object" },
+        "members": { "type": "array", "items": { "type": "string" } },
+        "code": { "type": "string" },
+        "categories": { "type": "array" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "joinRequests": { "type": "array" }
+      },
+      "required": ["plan", "members", "code", "createdBy"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email"]
+    }
+  },
+  "firestore": {
+    "/trips/{tripId}": {
+      "schema": "Trip",
+      "description": "Collection of all trips"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    }
+  }
+}
