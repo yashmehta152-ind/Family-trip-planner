@@ -140,10 +140,12 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
             </p>
           )}
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             type="submit"
             disabled={loading}
-            className="w-full bg-sky-500 text-white font-nunito font-black py-4 rounded-3xl shadow-xl shadow-sky-100 hover:bg-sky-600 active:scale-95 transition-all flex items-center justify-center gap-2 group"
+            className="w-full bg-sky-500 text-white font-nunito font-black py-4 rounded-3xl shadow-xl shadow-sky-100 transition-all flex items-center justify-center gap-2 group cursor-pointer"
           >
             {loading ? <Loader className="animate-spin" /> : (
               <>
@@ -151,21 +153,23 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </>
             )}
-          </button>
+          </motion.button>
         </form>
 
         <div className="mt-8 text-center bg-slate-50 p-4 rounded-3xl border border-slate-100">
           <p className="font-nunito font-bold text-slate-500 text-sm">
             {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={() => {
                 setMode(mode === "login" ? "register" : "login");
                 setError(null);
               }}
-              className="text-sky-500 hover:underline"
+              className="text-sky-500 font-black cursor-pointer ml-1"
             >
               {mode === "login" ? "Sign Up Free" : "Log In"}
-            </button>
+            </motion.button>
           </p>
         </div>
       </motion.div>

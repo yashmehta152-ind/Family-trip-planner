@@ -54,6 +54,7 @@ export interface TripData {
   id: string;
   plan: TripPlan;
   members: string[];
+  memberNames?: Record<string, string>;
   code: string;
   categories: TripCategory[];
   expenses: Expense[];
@@ -61,4 +62,5 @@ export interface TripData {
   joinRequests: JoinRequest[];
   createdAt: any;
   createdBy: string;
+  creatorId?: string;
 }

@@ -115,21 +115,30 @@ export default function App() {
       memberNames: { [myId]: myName },
     };
 
-    const code = await storage.createTrip(id, tripData);
-    if (code) {
-      showToast(`Trip ${code} created successfully!`);
-      go("lobby");
+    try {
+      const code = await storage.createTrip(id, tripData);
+      if (code) {
+        showToast(`Trip ${code} created successfully!`);
+        go("lobby");
+      } else {
+        showToast("Could not create trip.", "error");
+      }
+    } catch (err) {
+      console.error("Create trip error:", err);
+      showToast("Error creating trip.", "error");
     }
   }
 
   async function handleJoinTrip(trip: any) {
-    if (!trip.members.includes(myId) && !trip.members.includes(currentUser?.email)) {
+    if (!trip.members.includes(myId)) {
       const updatedMembers = [...trip.members, myId];
-      if (currentUser?.email) updatedMembers.push(currentUser.email);
+      const updatedNames = { ...trip.memberNames, [myId]: myName };
       await storage.updateTrip(trip.id, {
-        members: updatedMembers
+        members: updatedMembers,
+        memberNames: updatedNames
       });
       trip.members = updatedMembers;
+      trip.memberNames = updatedNames;
     }
     setOpenTrip(trip);
     go("checklist");
@@ -251,7 +260,6 @@ export default function App() {
 
       {screen === "planner" && (
         <PlannerScreen 
-          myName={myName!} 
           onBack={() => go("lobby")} 
           onCreate={handleCreateTrip} 
         />

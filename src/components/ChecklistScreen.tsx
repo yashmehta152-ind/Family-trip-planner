@@ -173,12 +173,14 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
-        <button 
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={onBack}
-          className="flex items-center gap-2 text-sky-600 font-nunito font-bold hover:text-sky-700 transition-colors"
+          className="flex items-center gap-2 text-sky-600 font-nunito font-bold hover:text-sky-700 transition-colors cursor-pointer"
         >
           <ChevronLeft size={20} /> All Trips
-        </button>
+        </motion.button>
         <div className="flex items-center gap-2 text-xs font-nunito font-bold text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
           <Wifi size={14} /> LIVE SYNCING
         </div>
@@ -213,17 +215,19 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
           const Icon = t.icon;
           const isActive = tab === t.id;
           return (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-nunito font-bold transition-all whitespace-nowrap ${
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-nunito font-bold transition-all whitespace-nowrap cursor-pointer ${
                 isActive 
                 ? "bg-white text-sky-600 shadow-sm ring-1 ring-slate-100" 
                 : "text-slate-500 hover:text-slate-700"
               }`}
             >
               <Icon size={18} /> {t.label}
-            </button>
+            </motion.button>
           );
         })}
       </div>
@@ -256,21 +260,25 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-nunito font-black text-2xl text-slate-800">Checklist</h3>
               <div className="flex gap-2">
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={copyJSON}
-                  className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-nunito font-bold shadow-sm hover:bg-slate-50 transition-colors"
+                  className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-nunito font-bold shadow-sm hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   {copied ? <Check size={18} className="text-emerald-500" /> : <Copy size={18} />}
                   {copied ? "Copied!" : "Copy JSON"}
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={useAiAssistant}
                   disabled={aiLoading}
-                  className="flex items-center gap-2 bg-linear-to-r from-purple-500 to-indigo-500 text-white px-4 py-2 rounded-xl font-nunito font-bold shadow-lg shadow-purple-100 active:scale-95 disabled:opacity-50"
+                  className="flex items-center gap-2 bg-linear-to-r from-purple-500 to-indigo-500 text-white px-4 py-2 rounded-xl font-nunito font-bold shadow-lg shadow-purple-100 disabled:opacity-50 cursor-pointer"
                 >
                   {aiLoading ? <Loader size={18} className="animate-spin" /> : <Sparkles size={18} />}
                   AI Assistant
-                </button>
+                </motion.button>
               </div>
             </div>
 
@@ -302,12 +310,17 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
                         const iChecked = item.checkedBy.includes(myName);
                         return (
                           <div key={item.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl group">
-                            <button onClick={() => toggleItem(cat.id, item.id)}>
+                            <motion.button 
+                              whileHover={{ scale: 1.2 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="cursor-pointer"
+                              onClick={() => toggleItem(cat.id, item.id)}
+                            >
                               {iChecked 
                                 ? <CheckCircle2 size={24} className="text-emerald-500" strokeWidth={2.5} />
                                 : <Circle size={24} className="text-slate-200" />
                               }
-                            </button>
+                            </motion.button>
                             <span className={`flex-1 font-caveat text-xl transition-all ${iChecked ? "text-slate-400 line-through" : "text-slate-700"}`}>
                               {item.text}
                             </span>
@@ -445,18 +458,22 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 px-1">
               <h3 className="font-nunito font-black text-2xl text-slate-800 self-start">Expenses & Payments</h3>
               <div className="flex gap-2 w-full sm:w-auto">
-                <button 
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => { setShowAddExp(true); setShowAddTrans(false); }}
-                  className="flex-1 sm:flex-none bg-emerald-500 text-white font-nunito font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-100 active:scale-95"
+                  className="flex-1 sm:flex-none bg-emerald-500 text-white font-nunito font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-100 cursor-pointer"
                 >
                   <Plus size={18} /> Trip Expense
-                </button>
-                <button 
+                </motion.button>
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => { setShowAddTrans(true); setShowAddExp(false); }}
-                  className="flex-1 sm:flex-none bg-indigo-500 text-white font-nunito font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-100 active:scale-95"
+                  className="flex-1 sm:flex-none bg-indigo-500 text-white font-nunito font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-100 cursor-pointer"
                 >
                   <UserCheck size={18} /> I Paid Member
-                </button>
+                </motion.button>
               </div>
             </div>
 
@@ -640,20 +657,24 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button 
+                      <motion.button 
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => onApproveMember(req.id)}
-                        className="bg-emerald-500 text-white p-3 rounded-2xl shadow-lg shadow-emerald-100 active:scale-95 transition-transform"
+                        className="bg-emerald-500 text-white p-3 rounded-2xl shadow-lg shadow-emerald-100 transition-transform cursor-pointer"
                         title="Approve"
                       >
                         <UserCheck size={24} />
-                      </button>
-                      <button 
+                      </motion.button>
+                      <motion.button 
+                        whileHover={{ scale: 1.15, backgroundColor: "#ef4444", color: "#ffffff" }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => onDeclineMember(req.id)}
-                        className="bg-red-50 text-red-500 p-3 rounded-2xl hover:bg-red-500 hover:text-white transition-all active:scale-95"
+                        className="bg-red-50 text-red-500 p-3 rounded-2xl transition-all cursor-pointer"
                         title="Decline"
                       >
                         <UserX size={24} />
-                      </button>
+                      </motion.button>
                     </div>
                   </motion.div>
                 ))}

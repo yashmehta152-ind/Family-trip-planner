@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { ChevronLeft, MapPin, Calendar, Users, Luggage, Sun, PlusCircle, ArrowRight, Globe } from "lucide-react";
+import { ChevronLeft, MapPin, Calendar, Users, Luggage, Sun, PlusCircle, ArrowRight, Globe, Loader } from "lucide-react";
 
 interface Props {
-  myName: string;
   onBack: () => void;
-  onCreate: (plan: any) => void;
+  onCreate: (plan: any) => Promise<void>;
 }
 
 const TRIP_TYPES = [
@@ -23,7 +22,7 @@ const WEATHER_TYPES = [
   { value: "cloudy", label: "☁️ Cloudy" },
 ];
 
-export default function PlannerScreen({ myName, onBack, onCreate }: Props) {
+export default function PlannerScreen({ onBack, onCreate }: Props) {
   const [dest, setDest] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
@@ -31,33 +30,40 @@ export default function PlannerScreen({ myName, onBack, onCreate }: Props) {
   const [weather, setWeather] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!dest || !start || !end) {
       setError("Please fill in destination and dates!");
       return;
     }
-    onCreate({
-      destination: dest,
-      startDate: start,
-      endDate: end,
-      tripType: type,
-      weather,
-      members: [myName],
-      createdBy: myName,
-      createdAt: new Date().toISOString(),
-      isPrivate
-    });
+    setLoading(true);
+    try {
+      await onCreate({
+        destination: dest,
+        startDate: start,
+        endDate: end,
+        tripType: type,
+        weather,
+        isPrivate
+      });
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <button 
+      <motion.button 
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={onBack}
-        className="flex items-center gap-2 text-sky-600 font-nunito font-bold mb-6 hover:text-sky-700 transition-colors"
+        className="flex items-center gap-2 text-sky-600 font-nunito font-bold mb-6 hover:text-sky-700 transition-colors cursor-pointer"
       >
         <ChevronLeft size={20} /> Back to Trips
-      </button>
+      </motion.button>
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -116,10 +122,12 @@ export default function PlannerScreen({ myName, onBack, onCreate }: Props) {
               { value: false, label: "Public", sub: "Anyone can join" },
               { value: true, label: "Private", sub: "Require approval" }
             ].map((p) => (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 key={String(p.value)}
                 onClick={() => setIsPrivate(p.value)}
-                className={`flex-1 p-3 rounded-2xl border-2 transition-all text-left ${
+                className={`flex-1 p-3 rounded-2xl border-2 transition-all text-left cursor-pointer ${
                   isPrivate === p.value
                     ? "bg-indigo-50 border-indigo-500 ring-4 ring-indigo-100"
                     : "bg-white border-slate-100 hover:border-slate-200"
@@ -127,7 +135,7 @@ export default function PlannerScreen({ myName, onBack, onCreate }: Props) {
               >
                 <p className={`font-nunito font-bold ${isPrivate === p.value ? "text-indigo-900" : "text-slate-700"}`}>{p.label}</p>
                 <p className="font-caveat text-slate-400 leading-none">{p.sub}</p>
-              </button>
+              </motion.button>
             ))}
           </div>
         </div>
@@ -138,17 +146,19 @@ export default function PlannerScreen({ myName, onBack, onCreate }: Props) {
           </label>
           <div className="flex flex-wrap gap-2">
             {TRIP_TYPES.map(t => (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 key={t.value}
                 onClick={() => setType(t.value)}
-                className={`px-4 py-2 rounded-full font-caveat text-lg border-2 transition-all ${
+                className={`px-4 py-2 rounded-full font-caveat text-lg border-2 transition-all cursor-pointer ${
                   type === t.value 
                   ? "bg-sky-100 border-sky-400 text-sky-800" 
                   : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
                 }`}
               >
                 {t.label}
-              </button>
+              </motion.button>
             ))}
           </div>
         </div>
@@ -159,29 +169,40 @@ export default function PlannerScreen({ myName, onBack, onCreate }: Props) {
           </label>
           <div className="flex flex-wrap gap-2">
             {WEATHER_TYPES.map(w => (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 key={w.value}
                 onClick={() => setWeather(w.value)}
-                className={`px-4 py-2 rounded-full font-caveat text-lg border-2 transition-all ${
+                className={`px-4 py-2 rounded-full font-caveat text-lg border-2 transition-all cursor-pointer ${
                   weather === w.value 
                   ? "bg-orange-100 border-orange-400 text-orange-800" 
                   : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
                 }`}
               >
                 {w.label}
-              </button>
+              </motion.button>
             ))}
           </div>
         </div>
 
         {error && <p className="text-red-500 text-center font-caveat text-lg">{error}</p>}
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleCreate}
-          className="w-full bg-linear-to-r from-emerald-500 to-sky-500 text-white font-nunito font-bold py-5 rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-emerald-200"
+          disabled={loading}
+          className="w-full bg-linear-to-r from-emerald-500 to-sky-500 text-white font-nunito font-bold py-5 rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-emerald-200 disabled:opacity-50 cursor-pointer"
         >
-          <PlusCircle size={24} /> Create Trip <ArrowRight size={20} />
-        </button>
+          {loading ? (
+            <Loader className="animate-spin" size={24} />
+          ) : (
+            <>
+              <PlusCircle size={24} /> Create Trip <ArrowRight size={20} />
+            </>
+          )}
+        </motion.button>
       </div>
     </div>
   );

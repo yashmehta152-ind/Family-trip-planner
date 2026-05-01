@@ -61,12 +61,14 @@ export default function LobbyScreen({ myName, myId, currentUser, trips, onJoin, 
             <p className="font-nunito font-bold text-slate-800">{myName}</p>
           </div>
         </div>
-        <button 
+        <motion.button 
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
           onClick={onLogout}
-          className="text-sm font-nunito font-bold text-slate-400 hover:text-slate-600 transition-colors"
+          className="text-sm font-nunito font-bold text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
         >
           Logout
-        </button>
+        </motion.button>
       </div>
 
       <motion.div 
@@ -81,20 +83,20 @@ export default function LobbyScreen({ myName, myId, currentUser, trips, onJoin, 
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={onNew}
-          className="bg-linear-to-r from-sky-500 to-sky-600 text-white font-nunito font-bold py-6 px-4 rounded-3xl flex flex-col items-center justify-center gap-2 shadow-xl shadow-sky-100"
+          className="bg-linear-to-r from-sky-500 to-sky-600 text-white font-nunito font-bold py-6 px-4 rounded-3xl flex flex-col items-center justify-center gap-2 shadow-xl shadow-sky-100 cursor-pointer"
         >
           <PlusCircle size={32} />
           <span>Create New Trip</span>
         </motion.button>
 
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => setShowCodeInput(true)}
-          className="bg-linear-to-r from-indigo-500 to-indigo-600 text-white font-nunito font-bold py-6 px-4 rounded-3xl flex flex-col items-center justify-center gap-2 shadow-xl shadow-indigo-100"
+          className="bg-linear-to-r from-indigo-500 to-indigo-600 text-white font-nunito font-bold py-6 px-4 rounded-3xl flex flex-col items-center justify-center gap-2 shadow-xl shadow-indigo-100 cursor-pointer"
         >
           <Hash size={32} />
           <span>Enter Trip Code</span>
@@ -112,9 +114,14 @@ export default function LobbyScreen({ myName, myId, currentUser, trips, onJoin, 
             <div className="bg-white p-6 rounded-3xl border-2 border-indigo-200 shadow-lg space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-nunito font-black text-indigo-900">Enter Secret Trip Code</h3>
-                <button onClick={() => setShowCodeInput(false)} className="text-slate-400 hover:text-slate-600">
+                <motion.button 
+                  whileHover={{ scale: 1.2 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowCodeInput(false)} 
+                  className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
                   <X size={20} />
-                </button>
+                </motion.button>
               </div>
               <div className="flex gap-2">
                 <input
@@ -125,13 +132,15 @@ export default function LobbyScreen({ myName, myId, currentUser, trips, onJoin, 
                   onChange={(e) => setTripCode(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleJoinByCode()}
                 />
-                <button 
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={handleJoinByCode}
                   disabled={joining || !tripCode.trim()}
-                  className="bg-indigo-500 text-white px-6 rounded-2xl font-nunito font-bold shadow-lg shadow-indigo-100 active:scale-95 disabled:opacity-50 flex items-center justify-center"
+                  className="bg-indigo-500 text-white px-6 rounded-2xl font-nunito font-bold shadow-lg shadow-indigo-100 disabled:opacity-50 flex items-center justify-center cursor-pointer"
                 >
                   {joining ? <Loader className="animate-spin" size={20} /> : "Join"}
-                </button>
+                </motion.button>
               </div>
               {codeError && (
                 <p className="text-rose-500 text-xs font-bold font-nunito">{codeError}</p>
@@ -151,7 +160,9 @@ export default function LobbyScreen({ myName, myId, currentUser, trips, onJoin, 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-white/90 backdrop-blur-sm rounded-3xl p-5 shadow-sm border border-slate-100 transition-all group relative cursor-pointer hover:border-sky-200"
+                whileHover={{ scale: 1.02, borderColor: "#7dd3fc" }}
+                whileTap={{ scale: 0.98 }}
+                className="bg-white/90 backdrop-blur-sm rounded-3xl p-5 shadow-sm border border-slate-100 transition-all group relative cursor-pointer"
                 onClick={() => onJoin(trip)}
               >
                 <div className="flex justify-between items-start">
@@ -186,20 +197,24 @@ export default function LobbyScreen({ myName, myId, currentUser, trips, onJoin, 
                   
                   <div className="flex flex-col items-end gap-2">
                     {trip.createdBy === myName && (
-                      <button 
+                      <motion.button 
+                        whileHover={{ scale: 1.2, color: "#f87171" }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={(e) => { e.stopPropagation(); onDelete(trip.id); }}
-                        className="p-2 text-slate-300 hover:text-red-400 transition-colors"
+                        className="p-2 text-slate-300 transition-colors cursor-pointer"
                       >
                         <Trash2 size={18} />
-                      </button>
+                      </motion.button>
                     )}
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.2, color: "#0ea5e9" }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={(e) => { e.stopPropagation(); downloadJSON(trip); }}
-                      className="p-2 text-slate-300 hover:text-sky-500 transition-colors"
+                      className="p-2 text-slate-300 transition-colors cursor-pointer"
                       title="Export as JSON"
                     >
                       <Download size={18} />
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
               </motion.div>
