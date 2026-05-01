@@ -336,12 +336,14 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
                                 })}
                               </div>
                             )}
-                            <button 
-                              onClick={() => deleteItem(cat.id, item.id)}
-                              className="opacity-0 group-hover:opacity-100 p-1 text-slate-200 hover:text-red-400 transition-all"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                        <motion.button 
+                          whileHover={{ scale: 1.1, color: "#f87171" }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => deleteItem(cat.id, item.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-slate-200 transition-all cursor-pointer"
+                        >
+                          <Trash2 size={16} />
+                        </motion.button>
                           </div>
                         );
                       })}
@@ -359,16 +361,32 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
                             onKeyDown={(e) => e.key === "Enter" && addItem(cat.id)}
                             autoFocus
                           />
-                          <button onClick={() => addItem(cat.id)} className="bg-sky-500 text-white px-3 py-1 rounded-lg font-nunito font-bold text-sm">Add</button>
-                          <button onClick={() => { setAddingTo(null); setNewItemText(""); }} className="p-2 text-slate-400"><X size={18} /></button>
+                          <motion.button 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => addItem(cat.id)} 
+                            className="bg-sky-500 text-white px-3 py-1 rounded-lg font-nunito font-bold text-sm cursor-pointer"
+                          >
+                            Add
+                          </motion.button>
+                          <motion.button 
+                            whileHover={{ scale: 1.2, color: "#ef4444" }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => { setAddingTo(null); setNewItemText(""); }} 
+                            className="p-2 text-slate-400 cursor-pointer"
+                          >
+                            <X size={18} />
+                          </motion.button>
                         </div>
                       ) : (
-                        <button 
+                        <motion.button 
+                          whileHover={{ scale: 1.05, color: "#0ea5e9" }}
+                          whileTap={{ scale: 0.95 }}
                           onClick={() => setAddingTo(cat.id)}
-                          className="w-full flex items-center justify-center gap-2 py-2 font-caveat text-slate-400 hover:text-sky-500 transition-colors"
+                          className="w-full flex items-center justify-center gap-2 py-2 font-caveat text-slate-400 transition-colors cursor-pointer"
                         >
                           <Plus size={16} /> Add to {cat.label}
-                        </button>
+                        </motion.button>
                       )}
                     </div>
                   </motion.div>
@@ -508,12 +526,22 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
                   />
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={addExpense} className="flex-1 bg-emerald-500 text-white font-nunito font-bold py-3 rounded-xl shadow-lg shadow-emerald-100 outline-hidden">
+                  <motion.button 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={addExpense} 
+                    className="flex-1 bg-emerald-500 text-white font-nunito font-bold py-3 rounded-xl shadow-lg shadow-emerald-100 outline-hidden cursor-pointer"
+                  >
                     Save Expense
-                  </button>
-                  <button onClick={() => setShowAddExp(false)} className="px-6 bg-slate-100 text-slate-500 font-nunito font-bold py-3 rounded-xl outline-hidden">
+                  </motion.button>
+                  <motion.button 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowAddExp(false)} 
+                    className="px-6 bg-slate-100 text-slate-500 font-nunito font-bold py-3 rounded-xl outline-hidden cursor-pointer"
+                  >
                     Cancel
-                  </button>
+                  </motion.button>
                 </div>
               </motion.div>
             )}
@@ -532,17 +560,19 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
                   <label className="block font-nunito font-bold text-slate-700 text-sm mb-1">Who did you pay?</label>
                   <div className="flex flex-wrap gap-2">
                     {trip.members.filter(m => m !== myId).map(member => (
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                         key={member}
                         onClick={() => setTransTo(member)}
-                        className={`px-4 py-2 rounded-xl font-nunito font-bold text-sm transition-all ${
+                        className={`px-4 py-2 rounded-xl font-nunito font-bold text-sm transition-all cursor-pointer ${
                           transTo === member 
                           ? "bg-indigo-500 text-white shadow-md ring-2 ring-indigo-200" 
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                         }`}
                       >
                         {trip.memberNames?.[member] || member}
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
@@ -557,12 +587,22 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
                   />
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={addTransfer} className="flex-1 bg-indigo-500 text-white font-nunito font-bold py-3 rounded-xl shadow-lg shadow-indigo-100 outline-hidden">
+                  <motion.button 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={addTransfer} 
+                    className="flex-1 bg-indigo-500 text-white font-nunito font-bold py-3 rounded-xl shadow-lg shadow-indigo-100 outline-hidden cursor-pointer"
+                  >
                     Record Payment
-                  </button>
-                  <button onClick={() => setShowAddTrans(false)} className="px-6 bg-slate-100 text-slate-500 font-nunito font-bold py-3 rounded-xl outline-hidden">
+                  </motion.button>
+                  <motion.button 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowAddTrans(false)} 
+                    className="px-6 bg-slate-100 text-slate-500 font-nunito font-bold py-3 rounded-xl outline-hidden cursor-pointer"
+                  >
                     Cancel
-                  </button>
+                  </motion.button>
                 </div>
               </motion.div>
             )}
@@ -603,12 +643,14 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
                         <p className={`font-nunito font-black text-xl ${item.type === 'expense' ? "text-slate-800" : "text-indigo-600"}`}>₹{item.amount.toLocaleString()}</p>
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{new Date(item.date).toLocaleDateString()}</p>
                       </div>
-                      <button 
+                      <motion.button 
+                        whileHover={{ scale: 1.2, color: "#f87171" }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => item.type === 'expense' ? deleteExpense(item.id) : deleteTransfer(item.id)}
-                        className="opacity-0 group-hover:opacity-100 p-2 text-slate-200 hover:text-red-400 transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-2 text-slate-200 transition-all cursor-pointer"
                       >
                         <Trash2 size={18} />
-                      </button>
+                      </motion.button>
                     </div>
                   </div>
                 ))}
