@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { storage } from "./services/storage";
 import { TripData } from "./types";
 import { Loader } from "lucide-react";
@@ -24,6 +25,7 @@ export default function App() {
   const [trips, setTrips] = useState<any[]>([]);
   const [openTrip, setOpenTrip] = useState<TripData | null>(null);
   const [trans, setTrans] = useState(false);
+  const [toast, setToast] = useState<{ message: string, type: "success" | "error" } | null>(null);
 
   const myName = currentUser?.name || "";
   const myId = currentUser?.id || "";
@@ -67,6 +69,11 @@ export default function App() {
     go("lobby", 200);
   }
 
+  function showToast(message: string, type: "success" | "error" = "success") {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  }
+
   async function handleLogout() {
     await signOut(auth);
     setCurrentUser(null);
@@ -78,13 +85,14 @@ export default function App() {
     if (!trip) return false;
     
     // Add user to members if not already there
-    if (!trip.members.includes(myId) && !trip.members.includes(currentUser?.email)) {
+    if (!trip.members.includes(myId)) {
       const updatedMembers = [...trip.members, myId];
-      if (currentUser?.email) updatedMembers.push(currentUser.email);
-      
+      const updatedNames = { ...(trip as any).memberNames, [myId]: myName };
       await storage.updateTrip(trip.id, {
-        members: updatedMembers
+        members: updatedMembers,
+        memberNames: updatedNames
       });
+      showToast("Joined trip successfully!");
     }
     return true;
   }
@@ -101,14 +109,17 @@ export default function App() {
     const tripData = {
       plan,
       categories: initialCategories,
-      createdBy: myName, // Keep name for display
-      creatorId: myId,  // Store ID for security logic if needed
-      members: [myId, currentUser?.email].filter(Boolean),
+      createdBy: myName,
+      creatorId: myId,
+      members: [myId],
+      memberNames: { [myId]: myName },
     };
 
-    await storage.createTrip(id, tripData);
-    setOpenTrip({ id, ...tripData, createdAt: new Date() } as any);
-    go("checklist");
+    const code = await storage.createTrip(id, tripData);
+    if (code) {
+      showToast(`Trip ${code} created successfully!`);
+      go("lobby");
+    }
   }
 
   async function handleJoinTrip(trip: any) {
@@ -181,7 +192,7 @@ export default function App() {
 
   async function handleDeleteTrip(id: string) {
     const trip = trips.find(t => t.id === id);
-    if (trip?.createdBy !== myName) {
+    if (trip?.creatorId !== myId && trip?.createdBy !== myName) {
       alert("Only the trip creator can delete this trip!");
       return;
     }
@@ -201,6 +212,19 @@ export default function App() {
 
   return (
     <div className={`min-h-screen font-caveat transition-opacity duration-350 bg-linear-to-br from-sky-100 via-yellow-50 to-pink-100 ${trans ? 'opacity-0' : 'opacity-100'}`}>
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl font-nunito font-bold flex items-center gap-2 border border-slate-700 pointer-events-none"
+          >
+            {toast.type === "success" ? "✅" : "❌"} {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {screen === "boot" && (
         <div className="flex flex-col items-center justify-center min-h-screen gap-4">
           <Loader size={36} className="text-sky-500 animate-spin" />

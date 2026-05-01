@@ -76,13 +76,15 @@ export const storage = {
     }
   },
 
-  async createTrip(id: string, data: any): Promise<void> {
+  async createTrip(id: string, data: any): Promise<string> {
     try {
       const code = Math.random().toString(36).substring(2, 5).toUpperCase() + Math.random().toString(36).substring(2, 5).toUpperCase();
       const trip = { ...data, code, createdAt: new Date().toISOString() };
       await setDoc(doc(db, TRIPS_COLLECTION, id), trip);
+      return code;
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, `${TRIPS_COLLECTION}/${id}`);
+      return "";
     }
   },
 

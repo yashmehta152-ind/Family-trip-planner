@@ -62,7 +62,7 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
       id: Math.random().toString(36).slice(2, 9),
       description: expDesc,
       amount: amt,
-      paidBy: myName,
+      paidBy: myId,
       date: new Date().toISOString()
     };
     onUpdateExpenses([...expenses, newExp]);
@@ -80,7 +80,7 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
     if (!transTo || isNaN(amt)) return;
     const newTrans: Transfer = {
       id: Math.random().toString(36).slice(2, 9),
-      from: myName,
+      from: myId,
       to: transTo,
       amount: amt,
       date: new Date().toISOString()
@@ -102,12 +102,12 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
         ...cat,
         items: cat.items.map(item => {
           if (item.id !== itemId) return item;
-          const checked = item.checkedBy.includes(myName);
+          const checked = item.checkedBy.includes(myId);
           return {
             ...item,
             checkedBy: checked 
-              ? item.checkedBy.filter(n => n !== myName)
-              : [...item.checkedBy, myName]
+              ? item.checkedBy.filter(n => n !== myId)
+              : [...item.checkedBy, myId]
           };
         })
       };
@@ -196,7 +196,7 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
           </div>
           <div className="flex flex-wrap gap-4 font-caveat text-xl opacity-90">
             <span>📅 {new Date(trip.plan.startDate).toLocaleDateString()}</span>
-            <span>👨‍👩‍👧 {trip.members.join(", ")}</span>
+            <span>👨‍👩‍👧 {trip.members.map((m: string) => trip.memberNames?.[m] || m).join(", ")}</span>
           </div>
         </div>
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl" />
@@ -313,11 +313,14 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
                             </span>
                             {item.checkedBy.length > 0 && (
                               <div className="flex gap-1">
-                                {item.checkedBy.map(m => (
-                                  <div key={m} className="w-5 h-5 rounded-full bg-sky-100 text-[8px] flex items-center justify-center font-bold text-sky-600 border border-sky-200" title={`Packed by ${m}`}>
-                                    {m[0].toUpperCase()}
-                                  </div>
-                                ))}
+                                {item.checkedBy.map(m => {
+                                  const name = trip.memberNames?.[m] || m;
+                                  return (
+                                    <div key={m} className="w-5 h-5 rounded-full bg-sky-100 text-[8px] flex items-center justify-center font-bold text-sky-600 border border-sky-200" title={`Packed by ${name}`}>
+                                      {name[0].toUpperCase()}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             )}
                             <button 
@@ -398,15 +401,16 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
                   
                   const isCredit = balance > 0;
                   const isSettled = Math.abs(balance) < 1;
+                  const displayName = trip.memberNames?.[member] || member;
 
                   return (
                     <div key={member} className="flex items-center justify-between p-3 bg-slate-50/50 rounded-2xl border border-slate-100/50">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-xs font-bold shadow-sm border border-slate-100">
-                          {member[0].toUpperCase()}
+                          {displayName[0].toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-nunito font-bold text-slate-800 text-sm">{member} {member === myName && "(You)"}</p>
+                          <p className="font-nunito font-bold text-slate-800 text-sm">{displayName} {member === myId && "(You)"}</p>
                           <div className="flex gap-2">
                             <p className="font-caveat text-slate-400 text-sm leading-none">Spent: ₹{Math.round(perPerson)}</p>
                             <p className="font-caveat text-emerald-500 text-sm leading-none font-bold">Paid: ₹{Math.round(memberPaid)}</p>
@@ -510,7 +514,7 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
                 <div>
                   <label className="block font-nunito font-bold text-slate-700 text-sm mb-1">Who did you pay?</label>
                   <div className="flex flex-wrap gap-2">
-                    {trip.members.filter(m => m !== myName).map(member => (
+                    {trip.members.filter(m => m !== myId).map(member => (
                       <button
                         key={member}
                         onClick={() => setTransTo(member)}
@@ -520,7 +524,7 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                         }`}
                       >
-                        {member}
+                        {trip.memberNames?.[member] || member}
                       </button>
                     ))}
                   </div>
@@ -565,13 +569,13 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
                         {item.type === 'expense' ? (
                           <>
                             <h4 className="font-nunito font-bold text-slate-800 leading-tight">{item.description}</h4>
-                            <p className="font-caveat text-slate-500 text-lg leading-none mt-1">Paid by {item.paidBy === myName ? "You" : item.paidBy}</p>
+                            <p className="font-caveat text-slate-500 text-lg leading-none mt-1">Paid by {item.paidBy === myId ? "You" : (trip.memberNames?.[item.paidBy] || item.paidBy)}</p>
                           </>
                         ) : (
                           <>
                             <h4 className="font-nunito font-bold text-slate-800 leading-tight">Direct Payment</h4>
                             <p className="font-caveat text-slate-500 text-lg leading-none mt-1">
-                              {item.from === myName ? "You paid " : item.from + " paid "} {item.to === myName ? "You" : item.to}
+                              {item.from === myId ? "You paid " : (trip.memberNames?.[item.from] || item.from) + " paid "} {item.to === myId ? "You" : (trip.memberNames?.[item.to] || item.to)}
                             </p>
                           </>
                         )}
@@ -666,9 +670,9 @@ export default function ChecklistScreen({ myName, myId, trip, onBack, onUpdateCa
                 {trip.members.map((m, i) => (
                   <div key={i} className="bg-white border border-slate-100 px-4 py-2 rounded-2xl flex items-center gap-2 shadow-sm">
                     <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold">
-                      {m[0].toUpperCase()}
+                      {(trip.memberNames?.[m] || m)[0].toUpperCase()}
                     </div>
-                    <span className="font-nunito font-bold text-slate-700">{m}</span>
+                    <span className="font-nunito font-bold text-slate-700">{trip.memberNames?.[m] || m}</span>
                   </div>
                 ))}
               </div>

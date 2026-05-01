@@ -23,7 +23,7 @@ export default function LobbyScreen({ myName, myId, currentUser, trips, onJoin, 
   const [codeError, setCodeError] = useState<string | null>(null);
 
   const myTrips = (trips || []).filter((t: any) => 
-    t.members.includes(myId) || t.members.includes(currentUser?.email) || t.members.includes(myName)
+    t.members.includes(myId) || t.members.includes(currentUser?.email)
   );
 
   const handleJoinByCode = async () => {
@@ -169,11 +169,18 @@ export default function LobbyScreen({ myName, myId, currentUser, trips, onJoin, 
                     </div>
 
                     <div className="mt-3 flex gap-1">
-                      {trip.members.map((m: string, i: number) => (
-                        <div key={i} className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold border border-white -ml-1 first:ml-0" title={m}>
-                          {m[0].toUpperCase()}
-                        </div>
-                      ))}
+                      {trip.members.map((m: string) => {
+                        const name = trip.memberNames?.[m] || (m.includes('@') ? m : 'User');
+                        return (
+                          <div 
+                            key={m} 
+                            className="w-6 h-6 rounded-full bg-linear-to-br from-indigo-100 to-sky-100 flex items-center justify-center text-[10px] font-bold border border-white -ml-1 first:ml-0" 
+                            title={name}
+                          >
+                            {name[0].toUpperCase()}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                   
